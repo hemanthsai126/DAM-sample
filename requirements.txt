@@ -1,5 +1,5 @@
 # Specify Python version (Streamlit Cloud might not directly respect this, but it's helpful for clarity)
-python_version = "3.10"
+python_version == "3.10"
 
 # Streamlit version for UI
 streamlit==1.21.0
