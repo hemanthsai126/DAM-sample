@@ -1,6 +1,7 @@
 streamlit==1.21.0
-ultralytics==8.0.20
+ultralytics==8.0.67
 opencv-python-headless==4.7.0.72
 numpy==1.24.2
-ultralytics.yolo
-python_version >= 3.10, <3.12
+torch==2.0.1
+torchvision==0.15.2
+PyYAML==6.0
