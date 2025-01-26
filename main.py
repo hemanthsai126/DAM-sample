@@ -3,6 +3,7 @@ from ultralytics import YOLO
 import tempfile
 import cv2
 import os
+import numpy as np
 
 # Load the YOLO model
 model = YOLO("yolov8n.pt")  # Use a pre-trained YOLOv8 model
@@ -10,7 +11,7 @@ model = YOLO("yolov8n.pt")  # Use a pre-trained YOLOv8 model
 # Title of the web app
 st.title("Object Detection")
 st.write("Upload a video or image to detect objects using the YOLO model.")
-st.write("Note:- This is just a prototype of my work during the internship.")
+st.write("Note: This is just a prototype of my work during the internship.")
 
 # Upload file
 uploaded_file = st.file_uploader("Choose a file (video or image)", type=["mp4", "avi", "mov", "mkv", "jpg", "jpeg", "png"])
@@ -20,16 +21,17 @@ if uploaded_file is not None:
 
     if file_type == "video":
         # Save the uploaded video to a temporary file
-        temp_video_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
-        with open(temp_video_path, "wb") as temp_file:
-            temp_file.write(uploaded_file.read())
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
+            temp_video_file.write(uploaded_file.read())
+            temp_video_path = temp_video_file.name
 
-        # Load the video
+        # Display the video
         st.video(temp_video_path)
         st.write("Processing video...")
 
         # Create a temporary file for the output video
-        output_video_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_output_video_file:
+            output_video_path = temp_output_video_file.name
 
         # Initialize a set to store detected object names
         detected_objects = set()
@@ -48,8 +50,11 @@ if uploaded_file is not None:
             if not ret:
                 break
 
+            # Convert BGR to RGB for YOLO model
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
             # Run YOLO object detection
-            results = model(frame)
+            results = model(frame_rgb)
 
             # Annotate the frame with bounding boxes
             annotated_frame = results[0].plot()
@@ -59,7 +64,7 @@ if uploaded_file is not None:
                 detected_objects.add(model.names[int(obj[5])])
 
             # Write the annotated frame to the output video
-            out.write(annotated_frame)
+            out.write(cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR))
 
         video.release()
         out.release()
@@ -78,22 +83,26 @@ if uploaded_file is not None:
 
     elif file_type == "image":
         # Save the uploaded image to a temporary file
-        temp_image_path = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg").name
-        with open(temp_image_path, "wb") as temp_file:
-            temp_file.write(uploaded_file.read())
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_image_file:
+            temp_image_file.write(uploaded_file.read())
+            temp_image_path = temp_image_file.name
 
         # Load the image
         image = cv2.imread(temp_image_path)
 
+        # Convert BGR to RGB for YOLO model
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         # Run YOLO object detection
-        results = model(image)
+        results = model(image_rgb)
 
         # Annotate the image with bounding boxes
         annotated_image = results[0].plot()
 
         # Save the annotated image to a temporary file
-        output_image_path = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg").name
-        cv2.imwrite(output_image_path, annotated_image)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_output_image_file:
+            output_image_path = temp_output_image_file.name
+            cv2.imwrite(output_image_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
         # Display the annotated image
         st.image(output_image_path, caption="Processed Image with Detected Objects")
